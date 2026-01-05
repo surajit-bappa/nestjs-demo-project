@@ -1,0 +1,47 @@
+import { Controller, Get, Post, Body, Query, UseInterceptors } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { EmployeeService } from './employee.service';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
+
+@Controller('employee')
+export class EmployeeController {
+  constructor(private readonly employeeService: EmployeeService) {}
+
+  @Get('list')
+  async listEmployees(
+    @Query('status') status?: string,
+    @Query('emp_no') emp_no?: string,
+  ) {
+    const result = await this.employeeService.list(status, emp_no);
+
+    if (result.length > 0) {
+      return {
+        status: 1,
+        message: 'Success',
+        error: null,
+        data: { result },
+      };
+    }
+
+    return {
+      status: 0,
+      message: 'Employee record not found',
+      error: 'No data found.',
+      data: null,
+    };
+  }
+
+@Post('add')
+  @UseInterceptors(AnyFilesInterceptor()) 
+  async addEmployee(@Body() dto: CreateEmployeeDto) {
+    return this.employeeService.add(dto);
+  }
+
+  @Post('update')
+  @UseInterceptors(AnyFilesInterceptor()) // REQUIRED for form-data
+  async updateEmployee(@Body() dto: UpdateEmployeeDto) {
+    return this.employeeService.update(dto);
+  }
+
+}
