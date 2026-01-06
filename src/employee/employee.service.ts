@@ -13,6 +13,20 @@ export class EmployeeService {
     private readonly dataSource: DataSource,
   ) {}
 
+
+   async nameList() {
+    return this.employeeRepo
+      .createQueryBuilder('e')
+      .select([
+        `UPPER(CONCAT(e.fname,' ',COALESCE(e.mname,''),' ',e.lname)) AS name`,
+        'e.id AS employee_id',
+        'e.emp_no AS emp_no',
+      ])
+      .where('e.is_deleted = :is_deleted', { is_deleted: 'N' })
+      .orderBy('name', 'ASC')
+      .getRawMany();
+  }
+
   async list(status?: string, emp_no?: string) {
     const qb = this.employeeRepo
       .createQueryBuilder('e')

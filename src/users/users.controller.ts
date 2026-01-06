@@ -14,7 +14,7 @@ export class UsersController {
 
   @Get('list')
   async getUsers() {
-    return this.usersService.listUsers();
+    return this.usersService.list();
   }
 
   @Post('add')

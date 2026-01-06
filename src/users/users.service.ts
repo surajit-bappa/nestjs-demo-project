@@ -12,8 +12,8 @@ export class UsersService {
   ) {}
 
 
-async listUsers() {
-    // ⚠️ Use plain quotes instead of backticks for table/column names
+async list() {
+    
     const sql = `
       SELECT 
         u.id AS user_id,

@@ -21,20 +21,20 @@ export class ScreensController {
   @UseInterceptors(FileFieldsInterceptor([]))  
   async addScreen(@Body() body: any) {
     console.log("ADD BODY =", body);
-    return this.screensService.addScreen(body);
+    return this.screensService.add(body);
   }
 
 @Post('update')
 @UseInterceptors(FileFieldsInterceptor([]))  
-async update(@Body() body: any) {
+async updateScreen(@Body() body: any) {
   console.log("UPDATE BODY =", body);
-  return this.screensService.updateScreen(body);
+  return this.screensService.update(body);
 }
 
 @Post('delete')
 @UseInterceptors(FileFieldsInterceptor([]))   // allows form-data
 async deleteScreen(@Body() body: any) {
-  return this.screensService.deleteScreen(body);
+  return this.screensService.delete(body);
 }
 
 

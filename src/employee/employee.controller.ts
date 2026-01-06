@@ -8,8 +8,30 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
+
+  @Get('name-list')
+  async employeeNameList() {
+    const result = await this.employeeService.nameList();
+
+    if (result && result.length > 0) {
+      return {
+        status: 1,
+        message: 'Success',
+        error: null,
+        data: result,
+      };
+    }
+
+    return {
+      status: 0,
+      message: 'Failed to get employee name list',
+      error: 'Failed to retrieve employee name list',
+      data: null,
+    };
+  }
+
   @Get('list')
-  async listEmployees(
+  async getEmployees(
     @Query('status') status?: string,
     @Query('emp_no') emp_no?: string,
   ) {

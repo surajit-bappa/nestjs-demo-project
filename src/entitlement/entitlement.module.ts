@@ -1,0 +1,10 @@
+// entitlement.module.ts
+import { Module } from '@nestjs/common';
+import { EntitlementController } from './entitlement.controller';
+import { EntitlementService } from './entitlement.service';
+
+@Module({
+  controllers: [EntitlementController],
+  providers: [EntitlementService],
+})
+export class EntitlementModule {}

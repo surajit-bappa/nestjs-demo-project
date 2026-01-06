@@ -8,8 +8,7 @@ export class ScreensService {
   constructor(
     @InjectRepository(ConfigScreens)
     private readonly screensRepo: Repository<ConfigScreens>,
-
-    private readonly dataSource: DataSource,  // ✅ FIX: Inject DataSource
+    private readonly dataSource: DataSource,  
   ) {}
 
   async list() {
@@ -50,7 +49,7 @@ export class ScreensService {
     }
   }
 
-  async addScreen(body: any) {
+  async add(body: any) {
     const {
       screen,
       routing_name,
@@ -117,7 +116,7 @@ export class ScreensService {
     };
   }
 
-  async updateScreen(body: any) {
+  async update(body: any) {
   const {
     screens_id,
     logedInEmpNo,
@@ -194,7 +193,7 @@ export class ScreensService {
   }
 }
 
-async deleteScreen(body: any) {
+async delete(body: any) {
   const { screen_id } = body;
 
   // === Validation like CI ===
