@@ -30,6 +30,11 @@ export class EmployeeController {
     };
   }
 
+  @Post('generate-employee-no')
+  async generateEmployeeNo(@Body('logedInEmpNo') logedInEmpNo: string) {
+    return this.employeeService.generateEmployeeNo(logedInEmpNo);
+  }
+
   @Get('list')
   async getEmployees(
     @Query('status') status?: string,
@@ -61,9 +66,15 @@ export class EmployeeController {
   }
 
   @Post('update')
-  @UseInterceptors(AnyFilesInterceptor()) // REQUIRED for form-data
+  @UseInterceptors(AnyFilesInterceptor()) 
   async updateEmployee(@Body() dto: UpdateEmployeeDto) {
     return this.employeeService.update(dto);
+  }
+
+  @Post('change-status')
+    @UseInterceptors(AnyFilesInterceptor()) 
+    async changeEmployeeStatus(@Body() body: any) {
+      return this.employeeService.changeStatus(body);
   }
 
 }

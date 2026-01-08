@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException,NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException,NotFoundException,InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository , DataSource, Not } from 'typeorm';
 import { Employee } from './employee.entity';
@@ -13,7 +13,6 @@ export class EmployeeService {
     private readonly dataSource: DataSource,
   ) {}
 
-
    async nameList() {
     return this.employeeRepo
       .createQueryBuilder('e')
@@ -25,6 +24,95 @@ export class EmployeeService {
       .where('e.is_deleted = :is_deleted', { is_deleted: 'N' })
       .orderBy('name', 'ASC')
       .getRawMany();
+  }
+
+   async generateEmployeeNo(logedInEmpNo: string) {
+    try {
+     
+      // Get last employee number
+      const lastEmployeeResult = await this.dataSource.query(
+        `SELECT emp_no FROM employee ORDER BY id DESC LIMIT 1`,
+      );
+
+      const lastEmployee = lastEmployeeResult[0];
+      let newEmpNo = '';
+
+      if (lastEmployee && lastEmployee.emp_no) {
+        const lastEmpNo = String(lastEmployee.emp_no).trim();
+
+        // Pure numeric emp no
+        if (/^\d+$/.test(lastEmpNo)) {
+          const length = lastEmpNo.length;
+          const numericValue = parseInt(lastEmpNo, 10);
+          newEmpNo = String(numericValue + 1).padStart(length, '0');
+        }
+        // Alphanumeric emp no
+        else {
+          const match = lastEmpNo.match(/(\d+)/);
+          if (match) {
+            const numericPart = match[0];
+            const length = numericPart.length;
+            const newNumeric = String(parseInt(numericPart, 10) + 1).padStart(
+              length,
+              '0',
+            );
+            newEmpNo = lastEmpNo.replace(/\d+/, newNumeric);
+          } else {
+            newEmpNo = `${lastEmpNo}1`;
+          }
+        }
+      } else {
+        newEmpNo = '10000001';
+      }
+
+      // Ensure uniqueness
+      let counter = 1;
+      let exists = await this.dataSource.query(
+        `SELECT emp_no FROM employee WHERE emp_no = ? LIMIT 1`,
+        [newEmpNo],
+      );
+
+      while (exists.length && counter < 100) {
+        if (/^\d+$/.test(newEmpNo)) {
+          const length = newEmpNo.length;
+          newEmpNo = String(parseInt(newEmpNo, 10) + counter).padStart(
+            length,
+            '0',
+          );
+        } else {
+          const match = newEmpNo.match(/(\d+)/);
+          if (match) {
+            const length = match[0].length;
+            const newNumeric = String(parseInt(match[0], 10) + counter).padStart(
+              length,
+              '0',
+            );
+            newEmpNo = newEmpNo.replace(/\d+/, newNumeric);
+          }
+        }
+
+        exists = await this.dataSource.query(
+          `SELECT emp_no FROM employee WHERE emp_no = ? LIMIT 1`,
+          [newEmpNo],
+        );
+        counter++;
+      }
+
+      return {
+        status: 1,
+        message: 'Employee No generated successfully.',
+        error: null,
+        data: {
+          new_employee_id: newEmpNo,
+          last_employee_id: lastEmployee?.emp_no ?? 'None',
+        },
+      };
+    } catch (error) {
+      
+      throw new InternalServerErrorException(
+        'An error occurred while generating the Employee No.',
+      );
+    }
   }
 
   async list(status?: string, emp_no?: string) {
@@ -204,6 +292,58 @@ export class EmployeeService {
         error: null,
       };
     });
+  }
+
+  async changeStatus(body: any) {
+    try {
+      
+      const employeeId = body.employee_id;
+      const status = body.status; // 1 Active, 2 Temp Deactive, 3 Left, 4 Retire
+      const logedInEmpNo = body.logedInEmpNo;
+
+      // Required fields check
+      if ( !employeeId || !logedInEmpNo || status === undefined ) {
+        return {
+          status: 0,
+          message: 'Failed to update employee status.',
+          error: 'Request parameters employee_id,logedInEmpNo, status are mandatory.',
+          data: null,
+        };
+      }
+
+      //  Update employee status
+      const updateResult = await this.dataSource.query(
+        `
+        UPDATE employee
+        SET status = ?, updated_by = ?, updated_at = NOW()
+        WHERE id = ?
+        `,
+        [status, logedInEmpNo, employeeId],
+      );
+
+      if (updateResult.affectedRows > 0) {
+        return {
+          status: 1,
+          message:
+            Number(status) === 1
+              ? 'Successfully activated'
+              : 'Successfully deactivated',
+          error: null,
+          data: true,
+        };
+      }
+
+      return {
+        status: 0,
+        message: 'Failed to update employee status.',
+        error: 'No changes were made to the employee record.',
+        data: null,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'An error occurred while updating employee status.',
+      );
+    }
   }
 
 }
