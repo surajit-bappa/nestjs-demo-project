@@ -5,7 +5,7 @@ import { UsersService } from './users.service';
 import { User } from './user.entity'; // import your entity
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])], // 👈 this line is required
+  imports: [TypeOrmModule.forFeature([User])], 
   controllers: [UsersController],
   providers: [UsersService],
 })

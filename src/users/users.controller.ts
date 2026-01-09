@@ -72,7 +72,6 @@ export class UsersController {
   @Post('update')
   @UseInterceptors(AnyFilesInterceptor())
   async updateUser(@Body() body: any) {
-    console.log('✏️ Update user request:', body);
 
     const { id, username, role, employee_id_fk, logedInEmpNo, isactive } = body;
 
@@ -104,7 +103,7 @@ export class UsersController {
 @Post('delete')
   @UseInterceptors(AnyFilesInterceptor())
   async deleteUser(@Body() body: any) {
-    console.log('🗑️ Delete user request:', body);
+    console.log('Delete user request:', body);
 
     const { id } = body;
 

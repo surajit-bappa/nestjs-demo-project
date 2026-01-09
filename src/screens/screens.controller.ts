@@ -32,7 +32,7 @@ async updateScreen(@Body() body: any) {
 }
 
 @Post('delete')
-@UseInterceptors(FileFieldsInterceptor([]))   // allows form-data
+@UseInterceptors(FileFieldsInterceptor([]))  
 async deleteScreen(@Body() body: any) {
   return this.screensService.delete(body);
 }
