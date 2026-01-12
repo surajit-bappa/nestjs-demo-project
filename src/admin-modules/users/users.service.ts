@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { User } from '../users/entities/user.entity'; 
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -41,7 +41,7 @@ async list() {
         data: result,
       };
     } catch (error) {
-      console.error('❌ SQL Error:', error);
+     
       return {
         status: 0,
         message: 'Query failed',

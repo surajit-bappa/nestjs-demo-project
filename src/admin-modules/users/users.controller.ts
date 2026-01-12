@@ -18,13 +18,12 @@ export class UsersController {
   }
 
   @Post('add')
-  @UseInterceptors(AnyFilesInterceptor()) // allows form-data
+  @UseInterceptors(AnyFilesInterceptor()) 
   async addUser(@Body() body: any) {
     console.log('👉 Received body:', body);
 
     const { password, username, role, employee_id_fk, logedInEmpNo } = body;
 
-    // === Validation (like CodeIgniter) ===
     if (!logedInEmpNo) {
       return {
         status: 0,

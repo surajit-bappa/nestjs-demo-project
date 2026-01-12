@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException,NotFoundException,InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository , DataSource, Not } from 'typeorm';
-import { Employee } from './employee.entity';
+import { Employee } from '../employee/entities/employee.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 

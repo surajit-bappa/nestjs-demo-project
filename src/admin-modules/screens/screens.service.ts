@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { ConfigScreens } from './screens.entity';
+import { ConfigScreens } from '../screens/entities/screens.entity';
 
 @Injectable()
 export class ScreensService {

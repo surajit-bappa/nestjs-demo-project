@@ -1,7 +1,7 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigScreens } from './screens.entity';
+import { ConfigScreens } from '../screens/entities/screens.entity';
 import { ScreensService } from './screens.service';
 import { ScreensController } from './screens.controller';
 
