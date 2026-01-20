@@ -4,134 +4,58 @@ import {
   Post,
   Body,
   UseInterceptors,
+  Query
 } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get('list')
-  async getUsers() {
-    return this.usersService.list();
-  }
+@Post('check-user-access')
+@UseInterceptors(AnyFilesInterceptor())  
+async checkUserAccess(@Body() body: any) {
+  return this.usersService.checkUserAccess(
+    body.username,
+    body.employee_id
+  );
+}
 
-  @Post('add')
-  @UseInterceptors(AnyFilesInterceptor()) 
-  async addUser(@Body() body: any) {
-    console.log('👉 Received body:', body);
+@Get('list')
+async getUsers(@Query('user_role') userRole: string) {
+  return this.usersService.list(userRole);
+}
 
-    const { password, username, role, employee_id_fk, logedInEmpNo } = body;
+@Post('add')
+@UseInterceptors(AnyFilesInterceptor())
+async addUser(@Body() dto: CreateUserDto) {
+  return this.usersService.create(dto);
+}
 
-    if (!logedInEmpNo) {
-      return {
-        status: 0,
-        message: 'Failed to add user.',
-        error: 'Request parameter logedInEmpNo is mandatory.',
-        data: null,
-      };
-    }
+@Post('status-change')
+@UseInterceptors(AnyFilesInterceptor()) 
+async updateUserStatus(@Body() body: any) {
+  return this.usersService.updateUserStatus(
+    body.username,
+    Number(body.employee_id_fk),
+    body.status, 
+  );
+}
 
-    if (!password || !username || !role || !employee_id_fk) {
-      return {
-        status: 0,
-        message: 'Failed to add user.',
-        error: 'Missing required parameters.',
-        data: null,
-      };
-    }
-
-    // === Call service to insert user ===
-    const result = await this.usersService.create({
-      employee_id_fk,
-      username,
-      password,
-      role,
-      logedInEmpNo,
-    });
-
-    if (result.success) {
-      return {
-        status: 1,
-        message: 'User added successfully',
-        error: null,
-        data: result.data,
-      };
-    } else {
-      return {
-        status: 0,
-        message: 'Failed to add user.',
-        error: result.error,
-        data: null,
-      };
-    }
-  }
-
-  @Post('update')
-  @UseInterceptors(AnyFilesInterceptor())
-  async updateUser(@Body() body: any) {
-
-    const { id, username, role, employee_id_fk, logedInEmpNo, isactive } = body;
-
-    if (!id) {
-      return { status: 0, message: 'Failed to update user.', error: 'Request parameter id is mandatory.', data: null };
-    }
-
-    if (!logedInEmpNo) {
-      return { status: 0, message: 'Failed to update user.', error: 'Request parameter logedInEmpNo is mandatory.', data: null };
-    }
-
-    const result = await this.usersService.update({
-      id,
-      username,
-      role,
-      employee_id_fk,
-      isactive,
-      logedInEmpNo,
-    });
-
-    if (result.success) {
-      return { status: 1, message: 'User updated successfully.', error: null, data: result.data };
-    } else {
-      return { status: 0, message: 'Failed to update user.', error: result.error, data: null };
-    }
-  }
-
+@Post('reset-password')
+@UseInterceptors(AnyFilesInterceptor()) 
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.usersService.resetPassword(dto);
+}
 
 @Post('delete')
-  @UseInterceptors(AnyFilesInterceptor())
-  async deleteUser(@Body() body: any) {
-    console.log('Delete user request:', body);
-
-    const { id } = body;
-
-    if (!id) {
-      return {
-        status: 0,
-        message: 'Failed to delete user.',
-        error: 'Request parameter id is mandatory.',
-        data: null,
-      };
-    }
-
-    const result = await this.usersService.delete(id);
-
-    if (result.success) {
-      return {
-        status: 1,
-        message: 'User deleted successfully.',
-        error: null,
-        data: null,
-      };
-    } else {
-      return {
-        status: 0,
-        message: 'Failed to delete user.',
-        error: result.error,
-        data: null,
-      };
-    }
-  }
+@UseInterceptors(AnyFilesInterceptor())  
+async deleteUser(@Body() body: any) {
+  const { id } = body;
+  return this.usersService.delete(id);
+}
 
 }

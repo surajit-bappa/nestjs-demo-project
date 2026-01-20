@@ -4,7 +4,7 @@ import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
-@Controller('employee')
+@Controller('employee-admin')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
@@ -30,9 +30,9 @@ export class EmployeeController {
     };
   }
 
-  @Post('generate-employee-no')
-  async generateEmployeeNo(@Body('logedInEmpNo') logedInEmpNo: string) {
-    return this.employeeService.generateEmployeeNo(logedInEmpNo);
+  @Get('generate-employee-no')
+  async generateEmployeeNo() {
+    return this.employeeService.generateEmployeeNo();
   }
 
   @Get('list')

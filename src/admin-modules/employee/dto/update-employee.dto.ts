@@ -3,11 +3,12 @@ import {
   IsString,
   IsEmail,
   Matches,
-  IsDateString,
   IsOptional,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class UpdateEmployeeDto {
+
   @IsNotEmpty()
   @IsString()
   employee_id: string;
@@ -25,16 +26,28 @@ export class UpdateEmployeeDto {
   })
   mobile: string;
 
-  @Matches(/^[A-Z][a-zA-Z]*$/, {
+  // ✅ FIRST NAME
+  @Transform(({ value }) =>
+    value?.trim().replace(/\s+/g, ' ')
+  )
+  @Matches(/^[A-Z][a-zA-Z ]*$/, {
     message: 'First name must start with capital letter',
   })
   fname: string;
 
+  // ✅ MIDDLE NAME
+  @Transform(({ value }) =>
+    value?.trim().replace(/\s+/g, ' ')
+  )
   @IsOptional()
   @IsString()
   mname?: string;
 
-  @Matches(/^[A-Z][a-zA-Z]*$/, {
+  // ✅ LAST NAME
+  @Transform(({ value }) =>
+    value?.trim().replace(/\s+/g, ' ')
+  )
+  @Matches(/^[A-Z][a-zA-Z ]*$/, {
     message: 'Last name must start with capital letter',
   })
   lname: string;
@@ -43,7 +56,8 @@ export class UpdateEmployeeDto {
   @IsString()
   gender: string;
 
-  @IsDateString()
+  @IsNotEmpty()
+  @IsString()
   dob: string;
 
   @IsOptional()

@@ -17,17 +17,21 @@ export class ScreensController {
     return this.screensService.list();
   }
 
+  @Get('parent-list')
+  async getParentScreenList() {
+
+    return this.screensService.getParentScreens();
+  }
+
 @Post('add')
   @UseInterceptors(FileFieldsInterceptor([]))  
   async addScreen(@Body() body: any) {
-    console.log("ADD BODY =", body);
     return this.screensService.add(body);
   }
 
 @Post('update')
 @UseInterceptors(FileFieldsInterceptor([]))  
 async updateScreen(@Body() body: any) {
-  console.log("UPDATE BODY =", body);
   return this.screensService.update(body);
 }
 

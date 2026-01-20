@@ -26,7 +26,7 @@ export class EmployeeService {
       .getRawMany();
   }
 
-   async generateEmployeeNo(logedInEmpNo: string) {
+   async generateEmployeeNo() {
     try {
      
       // Get last employee number
@@ -65,7 +65,6 @@ export class EmployeeService {
         newEmpNo = '10000001';
       }
 
-      // Ensure uniqueness
       let counter = 1;
       let exists = await this.dataSource.query(
         `SELECT emp_no FROM employee WHERE emp_no = ? LIMIT 1`,
@@ -108,7 +107,6 @@ export class EmployeeService {
         },
       };
     } catch (error) {
-      
       throw new InternalServerErrorException(
         'An error occurred while generating the Employee No.',
       );
@@ -181,7 +179,6 @@ export class EmployeeService {
 
     try {
       const employee = queryRunner.manager.create(Employee, {
-        user_role: dto.user_role,
         emp_no: dto.emp_no,
         fname: dto.fname,
         mname: dto.mname,
@@ -299,10 +296,10 @@ export class EmployeeService {
       
       const employeeId = body.employee_id;
       const status = body.status; // 1 Active, 2 Temp Deactive, 3 Left, 4 Retire
-      const logedInEmpNo = body.logedInEmpNo;
+      const updated_by = body.updated_by;
 
       // Required fields check
-      if ( !employeeId || !logedInEmpNo || status === undefined ) {
+      if ( !employeeId || !updated_by || status === undefined ) {
         return {
           status: 0,
           message: 'Failed to update employee status.',
@@ -318,7 +315,7 @@ export class EmployeeService {
         SET status = ?, updated_by = ?, updated_at = NOW()
         WHERE id = ?
         `,
-        [status, logedInEmpNo, employeeId],
+        [status, updated_by, employeeId],
       );
 
       if (updateResult.affectedRows > 0) {

@@ -15,7 +15,7 @@ export class ScreensService {
     try {
       const result = await this.dataSource.query(`
         SELECT
-            cs1.id AS screens_id,
+            cs1.id AS screen_id,
             cs1.parent_menu,
             cs1.sort_order,
             cs1.icon_menu,
@@ -49,6 +49,32 @@ export class ScreensService {
     }
   }
 
+  async getParentScreens() {
+  try {
+    const result = await this.dataSource.query( `
+      SELECT id, menu_name
+      FROM config_screens
+      WHERE parent_menu = 0
+        AND routing_name = ''
+      ORDER BY menu_name ASC
+    `);
+     return {
+        status: 1,
+        message: 'Success',
+        error: null,
+        data: result,
+      };
+    } catch (error) {
+      return {
+        status: 0,
+        message: 'Failed to get parent screen list',
+        error: error.message,
+        data: null,
+      };
+    }
+
+  }
+
   async add(body: any) {
     const {
       screen,
@@ -57,11 +83,11 @@ export class ScreensService {
       parent_screen,
       sortOrder,
       internalRouting,
-      logedInEmpNo,
+      created_by,
     } = body;
 
     // Required fields
-    if (!screen || !routing_name || !parent_screen || !logedInEmpNo) {
+    if (!screen || !parent_screen || !created_by) {
       return {
         status: 0,
         message: 'Failed to add screen.',
@@ -99,7 +125,7 @@ export class ScreensService {
         parent_screen,
         parseInt(sortOrder) || 0,
         internalRouting,
-        logedInEmpNo,
+        created_by,
         now,
       ],
     );
@@ -118,8 +144,8 @@ export class ScreensService {
 
   async update(body: any) {
   const {
-    screens_id,
-    logedInEmpNo,
+    screen_id,
+    updated_by,
     screen,
     routing_name,
     icon_menu,
@@ -129,7 +155,7 @@ export class ScreensService {
   } = body;
 
   // === Required params ===
-  if (!screens_id || !logedInEmpNo) {
+  if (!screen_id || !updated_by) {
     return {
       status: 0,
       message: 'Failed to update screen',
@@ -162,9 +188,9 @@ export class ScreensService {
         parseInt(sortOrder) || 0,
         internalRouting,
         icon_menu,
-        logedInEmpNo,
+        updated_by,
         update_datetime,
-        screens_id,
+        screen_id,
       ],
     );
 
@@ -195,8 +221,7 @@ export class ScreensService {
 
 async delete(body: any) {
   const { screen_id } = body;
-
-  // === Validation like CI ===
+  
   if (!screen_id) {
     return {
       status: 0,
@@ -243,6 +268,5 @@ async delete(body: any) {
     };
   }
 }
-
 
 }

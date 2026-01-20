@@ -17,6 +17,18 @@ export class EntitlementController {
     return this.entitlementService.adminMenuList(userRole);
   }
 
+   @Get('screens')
+  async getModuleEntitlementScreens() {
+    const result = await this.entitlementService.getScreenList();
+
+    return {
+      status: 1,
+      message: 'Success',
+      error: null,
+      data: result,
+    };
+  }
+
   @Get('list')
   async getEntitlement(
     @Query('role') role?: string,

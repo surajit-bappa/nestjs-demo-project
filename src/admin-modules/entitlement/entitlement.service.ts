@@ -162,6 +162,18 @@ export class EntitlementService {
     }
   }
 
+  async getScreenList() {
+    const query = `
+      SELECT DISTINCT cs.*
+      FROM config_screens cs
+      LEFT JOIN config_role_mapping crm
+        ON cs.id = crm.screen_id_fk
+      ORDER BY cs.menu_name
+    `;
+
+    return this.dataSource.query(query);
+  }
+
   async list(role?: string, screenId?: number) {
     try {
       let sql = `
