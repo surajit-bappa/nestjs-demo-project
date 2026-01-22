@@ -86,15 +86,23 @@ export class ScreensService {
       created_by,
     } = body;
 
-    // Required fields
-    if (!screen || !parent_screen || !created_by) {
-      return {
-        status: 0,
-        message: 'Failed to add screen.',
-        error: 'Missing required parameters.',
-        data: null,
-      };
-    }
+    const requiredParams = [
+        'screen',
+        'parent_screen',
+        'created_by',
+      ];
+
+      for (const param of requiredParams) {
+        if (!body[param]) {
+           return {
+                  status: 0,
+                  message: 'Failed to add screen',
+                  error: `${param} is required`,
+                  data: null,
+                };
+         }
+          
+      }
 
     // Check duplicate
     const duplicate = await this.dataSource.query(
@@ -154,15 +162,23 @@ export class ScreensService {
     internalRouting,
   } = body;
 
-  // === Required params ===
-  if (!screen_id || !updated_by) {
-    return {
-      status: 0,
-      message: 'Failed to update screen',
-      error: 'Missing required parameters',
-      data: null,
-    };
-  }
+
+      const requiredParams = [
+        'screen_id',
+        'updated_by',
+      ];
+
+      for (const param of requiredParams) {
+        if (!body[param]) {
+           return {
+                  status: 0,
+                  message: 'Failed to update screen',
+                  error: `${param} is required`,
+                  data: null,
+                };
+         }
+          
+      }
 
   const update_datetime = new Date();
 

@@ -17,8 +17,8 @@ export class UpdateEmployeeDto {
   @IsString()
   emp_no: string;
 
-  @IsEmail()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Email must be a valid email address' })
   email: string;
 
   @Matches(/^\d{10}$/, {

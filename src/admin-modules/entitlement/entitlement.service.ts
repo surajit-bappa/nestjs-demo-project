@@ -235,8 +235,14 @@ export class EntitlementService {
 
       for (const param of requiredParams) {
         if (!body[param]) {
-          throw new BadRequestException(`${param} is required`);
-        }
+           return {
+                  status: 0,
+                  message: 'Failed to add role data',
+                  error: `${param} is required`,
+                  data: null,
+                };
+         }
+          
       }
 
       const roles = JSON.parse(body.role_data); // [{ value: 'SA' }]
@@ -335,8 +341,14 @@ export class EntitlementService {
 
       for (const param of requiredParams) {
         if (!body[param]) {
-          throw new BadRequestException(`${param} is required`);
-        }
+           return {
+                  status: 0,
+                  message: 'Failed to update role data',
+                  error: `${param} is required`,
+                  data: null,
+                };
+         }
+          
       }
 
       const screenId = body.screen_id;

@@ -13,8 +13,8 @@ export class CreateEmployeeDto {
   @IsNotEmpty()
   emp_no: string;
 
-  @IsEmail()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Email must be a valid email address' })
   email: string;
 
   @IsString()
