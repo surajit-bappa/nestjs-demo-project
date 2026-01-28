@@ -75,6 +75,63 @@ export class UsersService {
     }
   }
 
+ async getUserProfile(employee_id: string) {
+  try {
+    if (!employee_id) {
+      return {
+        status: 0,
+        message: 'Failed to get user profile.',
+        error: 'employee_id is mandatory.',
+        data: null,
+      };
+    }
+
+    const result = await this.dataSource.query(
+      `
+      SELECT 
+        e.id, e.emp_no, e.user_role,
+        UPPER(CONCAT(
+          e.fname, 
+          ' ', 
+          IFNULL(e.mname, ''), 
+          ' ', 
+          e.lname
+        )) AS name,
+        DATE_FORMAT(e.dob, '%Y-%m-%d') AS dob,
+        e.mobile, e.email, e.gender, e.address, 
+        e.department, e.designation, e.status
+      FROM employee e
+      WHERE e.id = ?
+        AND e.status IN (1, 2)
+      `,
+      [employee_id],
+    );
+
+    if (result.length === 0) {
+      return {
+        status: 0,
+        message: 'Failed to get user profile.',
+        error: 'Invalid employee id or inactive employee.',
+        data: null,
+      };
+    }
+
+    return {
+      status: 1,
+      message: 'Success',
+      error: null,
+      data: result[0],
+    };
+  } catch (error) {
+    return {
+      status: 0,
+      message: 'There is an application error, please contact support team.',
+      error: error.message,
+      data: null,
+    };
+  }
+}
+
  async list(userRole?: string) {
   let sql = `
     SELECT 

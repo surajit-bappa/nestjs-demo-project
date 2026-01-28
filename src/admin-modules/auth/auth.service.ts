@@ -211,6 +211,59 @@ export class AuthService {
 //   }
 // }
 
+async checkCredentials(username: string, emp_no: string, dob: string) {
+    try {
+      if (!username || !emp_no || !dob) {
+        return {
+          status: 0,
+          message: 'Failed to check credentials',
+          error: 'Please provide username, emp_no, and dob.',
+          data: null,
+        };
+      }
+
+      const result = await this.dataSource.query(
+        `
+        SELECT 
+          u.username,
+          e.emp_no,
+          DATE_FORMAT(e.dob, '%Y-%m-%d') AS dob
+        FROM user_login u
+        JOIN employee e ON e.id = u.employee_id_fk
+        WHERE u.username = ?
+          AND e.emp_no = ?
+          AND e.dob = ?
+        LIMIT 1
+        `,
+        [username, emp_no, dob],
+      );
+
+      if (result.length === 1) {
+        return {
+          status: 1,
+          message: 'Success',
+          error: null,
+          data: null,
+        };
+      }
+
+      return {
+        status: 0,
+        message: 'Not matched',
+        error: 'Username, Employee No, or DOB not matched.',
+        data: null,
+      };
+    } catch (error) {
+      console.error('checkCredentials error:', error);
+      return {
+        status: 0,
+        message: 'There is an application error.',
+        error: error.message,
+        data: null,
+      };
+    }
+  }
+
   async login(username: string, password: string) {
     try {
       /* ---------------- VALIDATION ---------------- */
@@ -311,6 +364,121 @@ export class AuthService {
       return {
         status: 0,
         message: 'There is an application error, please contact support team.',
+        error: error.message,
+        data: null,
+      };
+    }
+  }
+
+  async resetPassword(username: string, password: string) {
+    try {
+     
+     if (!username || !password) {
+        return {
+          status: 0,
+          message: 'Username and password are required',
+          error: 'Missing credentials',
+          data: null,
+        };
+      }
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const result = await this.dataSource.query(
+        `
+        UPDATE user_login
+        SET password_hash = ?
+        WHERE username = ?
+        `,
+        [hashedPassword, username],
+      );
+
+      return {
+        status: 1,
+        message: 'Password reset successfully',
+        error: null,
+        data: null,
+      };
+    } catch (error) {
+      return {
+        status: 0,
+        message: 'There is an application error.',
+        error: error.message,
+        data: null,
+      };
+    }
+  }
+
+  async changePassword(dto: any) {
+    const { user_id, oldpassword, newpassword } = dto;
+
+    try {
+      // Fetch existing password
+      const result = await this.dataSource.query(
+        `
+        SELECT password_hash
+        FROM user_login
+        WHERE id = ?
+        LIMIT 1
+        `,
+        [user_id],
+      );
+
+      if (result.length === 0) {
+        return {
+          status: 0,
+          message: 'Failed to change password.',
+          error: 'Employee not found.',
+          data: null,
+        };
+      }
+
+      const dbPassword = result[0].password_hash;
+
+      // Compare password (bcrypt)
+      const isMatch = await bcrypt.compare(oldpassword, dbPassword);
+
+      if (!isMatch) {
+        return {
+          status: 0,
+          message: 'Old password did not match.',
+          error: 'Old password did not match.',
+          data: null,
+        };
+      }
+
+      //  Hash new password
+      const hashedPassword = await bcrypt.hash(newpassword, 10);
+
+      const updateResult = await this.dataSource.query(
+        `
+        UPDATE user_login
+        SET password_hash = ?
+        WHERE id = ?
+        `,
+        [hashedPassword, user_id],
+      );
+
+      if (updateResult.affectedRows === 1) {
+        return {
+          status: 1,
+          message: 'Password changed successfully.',
+          error: null,
+          data: null,
+        };
+      }
+
+      return {
+        status: 0,
+        message: 'Failed to update password.',
+        error: 'No changes were made.',
+        data: null,
+      };
+    } catch (error) {
+      console.error('changePassword error:', error);
+      return {
+        status: 0,
+        message: 'There is an application error.',
         error: error.message,
         data: null,
       };

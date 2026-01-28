@@ -24,6 +24,13 @@ async checkUserAccess(@Body() body: any) {
   );
 }
 
+@Get('profile')
+async getUserProfile(
+  @Query('employee_id') employee_id: string,
+) {
+  return this.usersService.getUserProfile(employee_id);
+}
+
 @Get('list')
 async getUsers(@Query('user_role') userRole: string) {
   return this.usersService.list(userRole);
