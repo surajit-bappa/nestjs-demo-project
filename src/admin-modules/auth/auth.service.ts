@@ -1,13 +1,21 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 //import { createCanvas } from 'canvas';
-import { DataSource } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import { DataSource , Repository} from 'typeorm';
+import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
+import * as crypto from 'crypto';
+import { MoreThan } from 'typeorm';
+import { User } from '../users/entities/user.entity'; 
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 
 @Injectable()
 export class AuthService {
     constructor(
+      @InjectRepository(User)
+      private readonly userRepo: Repository<User>,
       private readonly dataSource: DataSource,
     ) {}
 
@@ -211,59 +219,6 @@ export class AuthService {
 //   }
 // }
 
-async checkCredentials(username: string, emp_no: string, dob: string) {
-    try {
-      if (!username || !emp_no || !dob) {
-        return {
-          status: 0,
-          message: 'Failed to check credentials',
-          error: 'Please provide username, emp_no, and dob.',
-          data: null,
-        };
-      }
-
-      const result = await this.dataSource.query(
-        `
-        SELECT 
-          u.username,
-          e.emp_no,
-          DATE_FORMAT(e.dob, '%Y-%m-%d') AS dob
-        FROM user_login u
-        JOIN employee e ON e.id = u.employee_id_fk
-        WHERE u.username = ?
-          AND e.emp_no = ?
-          AND e.dob = ?
-        LIMIT 1
-        `,
-        [username, emp_no, dob],
-      );
-
-      if (result.length === 1) {
-        return {
-          status: 1,
-          message: 'Success',
-          error: null,
-          data: null,
-        };
-      }
-
-      return {
-        status: 0,
-        message: 'Not matched',
-        error: 'Username, Employee No, or DOB not matched.',
-        data: null,
-      };
-    } catch (error) {
-      console.error('checkCredentials error:', error);
-      return {
-        status: 0,
-        message: 'There is an application error.',
-        error: error.message,
-        data: null,
-      };
-    }
-  }
-
   async login(username: string, password: string) {
     try {
       /* ---------------- VALIDATION ---------------- */
@@ -370,28 +325,121 @@ async checkCredentials(username: string, emp_no: string, dob: string) {
     }
   }
 
-  async resetPassword(username: string, password: string) {
+  
+async checkCredentials(username: string, emp_no: string, dob: string) {
     try {
-     
-     if (!username || !password) {
+      if (!username || !emp_no || !dob) {
         return {
           status: 0,
-          message: 'Username and password are required',
-          error: 'Missing credentials',
+          message: 'Failed to check credentials',
+          error: 'Please provide username, emp_no, and dob.',
           data: null,
         };
       }
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
 
       const result = await this.dataSource.query(
         `
-        UPDATE user_login
-        SET password_hash = ?
-        WHERE username = ?
+        SELECT 
+          u.username,
+          e.emp_no,
+          DATE_FORMAT(e.dob, '%Y-%m-%d') AS dob
+        FROM user_login u
+        JOIN employee e ON e.id = u.employee_id_fk
+        WHERE u.username = ?
+          AND e.emp_no = ?
+          AND e.dob = ?
+        LIMIT 1
         `,
-        [hashedPassword, username],
+        [username, emp_no, dob],
       );
+
+   if (result.length !== 1) {
+      return {
+        status: 0,
+        message: 'Not matched',
+        error: 'Username, Employee No, or DOB not matched.',
+        data: null,
+      };
+    }
+
+    //  Fetch user entity
+    const user = await this.userRepo.findOne({
+      where: { username },
+    });
+
+    if (!user) {
+      return {
+        status: 0,
+        message: 'User not found',
+        error: 'No user associated with this username.',
+        data: null,
+      };
+    }
+
+    // Generate reset token
+    const token = crypto.randomBytes(32).toString('hex');
+
+    user.reset_token = token;
+    user.reset_token_expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await this.userRepo.save(user);
+
+      return {
+            status: 1,
+            message: 'Success.',
+            error: null,
+            data: {
+              token
+            },
+    };
+
+
+    } catch (error) {
+      console.error('checkCredentials error:', error);
+      return {
+        status: 0,
+        message: 'There is an application error.',
+        error: error.message,
+        data: null,
+      };
+    }
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    try {
+
+      if (dto.new_password !== dto.confirm_password) {
+
+        return {
+          status: 0,
+          message: 'New Password and confirm password do not match',
+          error: 'Passwords do not match',
+          data: null,
+        };
+   }
+
+    const user = await this.userRepo.findOne({
+    where: {
+      reset_token: dto.token,
+      reset_token_expiry: MoreThan(new Date()),
+    },
+  });
+     
+     if (!user) {
+        return {
+          status: 0,
+          message: 'Invalid or expired token',
+          error: 'Invalid or expired token',
+          data: null,
+        };
+      }
+
+      // Hash password
+       user.password_hash = await bcrypt.hash(dto.new_password, 10);
+       user.reset_token = null;
+       user.reset_token_expiry = null;
+
+      await this.userRepo.save(user);
 
       return {
         status: 1,
@@ -409,34 +457,27 @@ async checkCredentials(username: string, emp_no: string, dob: string) {
     }
   }
 
-  async changePassword(dto: any) {
-    const { user_id, oldpassword, newpassword } = dto;
+  async changePassword(dto: ChangePasswordDto) {
+    const { user_id, old_password, new_password } = dto;
 
     try {
       // Fetch existing password
-      const result = await this.dataSource.query(
-        `
-        SELECT password_hash
-        FROM user_login
-        WHERE id = ?
-        LIMIT 1
-        `,
-        [user_id],
-      );
+      const user = await this.userRepo.findOne({
+      where: { id: Number(user_id) },
+      select: ['id', 'password_hash'], // important for security
+    });
 
-      if (result.length === 0) {
+    if (!user) {
         return {
           status: 0,
           message: 'Failed to change password.',
           error: 'Employee not found.',
           data: null,
         };
-      }
+    }
 
-      const dbPassword = result[0].password_hash;
-
-      // Compare password (bcrypt)
-      const isMatch = await bcrypt.compare(oldpassword, dbPassword);
+    // Compare password
+     const isMatch = await bcrypt.compare(old_password, user.password_hash);
 
       if (!isMatch) {
         return {
@@ -448,34 +489,19 @@ async checkCredentials(username: string, emp_no: string, dob: string) {
       }
 
       //  Hash new password
-      const hashedPassword = await bcrypt.hash(newpassword, 10);
+      user.password_hash = await bcrypt.hash(new_password, 10);
 
-      const updateResult = await this.dataSource.query(
-        `
-        UPDATE user_login
-        SET password_hash = ?
-        WHERE id = ?
-        `,
-        [hashedPassword, user_id],
-      );
+      await this.userRepo.save(user);
 
-      if (updateResult.affectedRows === 1) {
         return {
           status: 1,
           message: 'Password changed successfully.',
           error: null,
           data: null,
         };
-      }
-
-      return {
-        status: 0,
-        message: 'Failed to update password.',
-        error: 'No changes were made.',
-        data: null,
-      };
+      
     } catch (error) {
-      console.error('changePassword error:', error);
+     
       return {
         status: 0,
         message: 'There is an application error.',
@@ -484,6 +510,4 @@ async checkCredentials(username: string, emp_no: string, dob: string) {
       };
     }
   }
-
-
 }

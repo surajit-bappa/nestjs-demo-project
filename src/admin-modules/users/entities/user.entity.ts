@@ -22,6 +22,12 @@ export class User {
   @Column()
   user_role: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  reset_token: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  reset_token_expiry: Date | null;
+
   @Column({ nullable: true })
   created_by: string;
 

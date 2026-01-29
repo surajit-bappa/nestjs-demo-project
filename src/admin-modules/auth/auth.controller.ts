@@ -1,6 +1,7 @@
 import { Controller, Get , Post, Body, Query, UseInterceptors} from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth-admin')
@@ -11,13 +12,6 @@ export class AuthController {
   // captcha() {
   //   return this.authService.generateCaptcha();
   // }
-
-  @Post('check-credentials')
-  @UseInterceptors(AnyFilesInterceptor())
-  async checkCredentials(@Body() body: any) {
-    const { username, emp_no, dob } = body;
-    return this.authService.checkCredentials(username, emp_no, dob);
-  }
 
   @Post('login')
   @UseInterceptors(AnyFilesInterceptor())
@@ -35,11 +29,17 @@ export class AuthController {
     );
   }
 
+  @Post('check-credentials')
+  @UseInterceptors(AnyFilesInterceptor())
+  async checkCredentials(@Body() body: any) {
+    const { username, emp_no, dob } = body;
+    return this.authService.checkCredentials(username, emp_no, dob);
+  }
+
   @Post('reset-password')
    @UseInterceptors(AnyFilesInterceptor())
-  async resetPassword(@Body() body: any) {
-     const { username, password } = body;
-    return this.authService.resetPassword(username, password);
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   @Post('change-password')
