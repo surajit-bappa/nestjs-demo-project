@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Employee } from '../../employee/entities/employee.entity';
-import { Role } from '../../roles/entities/roles.entity';
+import { Roles } from '../../roles/entities/roles.entity';
 
 @Entity('user_login')
 export class User {
@@ -44,9 +44,9 @@ export class User {
   @JoinColumn({ name: 'employee_id_fk' })
   employee: Employee;
 
-  @ManyToOne(() => Role, (role) => role.users)
+  @ManyToOne(() => Roles, (role) => role.users)
   @JoinColumn({ name: 'user_role', referencedColumnName: 'rolecode' })
-  role: Role;
+  role: Roles;
 }
 
 

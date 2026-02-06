@@ -2,10 +2,16 @@ import {
   Controller,
   Get,
   Query,
-  HttpStatus,
+  Post,
+  Body,
   InternalServerErrorException,
+  UseInterceptors
 } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 import { RolesService } from './roles.service';
+
 
 @Controller('roles')
 export class RolesController {
@@ -24,7 +30,6 @@ export class RolesController {
           data,
         };
       }
-
       return {
         status: 0,
         message: 'Failed to get role list',
@@ -40,4 +45,10 @@ export class RolesController {
       });
     }
   }
+
+    @Post('add')
+    @UseInterceptors(AnyFilesInterceptor())  
+    async addRole(@Body() dto: CreateRoleDto) {
+      return this.rolesService.add(dto);
+    }
 }
