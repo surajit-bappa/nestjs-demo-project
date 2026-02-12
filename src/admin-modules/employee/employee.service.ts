@@ -27,89 +27,43 @@ export class EmployeeService {
       .getRawMany();
   }
 
-   async generateEmployeeNo() {
+  async generateEmployeeNo() {
     try {
-     
-      // Get last employee number
-      const lastEmployeeResult = await this.dataSource.query(
+      const now = new Date();
+
+      const year = String(now.getFullYear()).slice(-2);
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+
+      const prefix = `E${year}${month}`;
+
+      // get last employee no
+      const result = await this.dataSource.query(
         `SELECT emp_no FROM employee ORDER BY id DESC LIMIT 1`,
       );
 
-      const lastEmployee = lastEmployeeResult[0];
-      let newEmpNo = '';
+      let nextSeq = 1;
 
-      if (lastEmployee && lastEmployee.emp_no) {
-        const lastEmpNo = String(lastEmployee.emp_no).trim();
+      if (result.length && result[0].emp_no) {
+        const lastEmpNo = result[0].emp_no;
 
-        // Pure numeric emp no
-        if (/^\d+$/.test(lastEmpNo)) {
-          const length = lastEmpNo.length;
-          const numericValue = parseInt(lastEmpNo, 10);
-          newEmpNo = String(numericValue + 1).padStart(length, '0');
-        }
-        // Alphanumeric emp no
-        else {
-          const match = lastEmpNo.match(/(\d+)/);
-          if (match) {
-            const numericPart = match[0];
-            const length = numericPart.length;
-            const newNumeric = String(parseInt(numericPart, 10) + 1).padStart(
-              length,
-              '0',
-            );
-            newEmpNo = lastEmpNo.replace(/\d+/, newNumeric);
-          } else {
-            newEmpNo = `${lastEmpNo}1`;
-          }
-        }
-      } else {
-        newEmpNo = '10000001';
+        const lastNumber = parseInt(lastEmpNo.slice(-3), 10);
+        nextSeq = lastNumber + 1;
       }
 
-      let counter = 1;
-      let exists = await this.dataSource.query(
-        `SELECT emp_no FROM employee WHERE emp_no = ? LIMIT 1`,
-        [newEmpNo],
-      );
-
-      while (exists.length && counter < 100) {
-        if (/^\d+$/.test(newEmpNo)) {
-          const length = newEmpNo.length;
-          newEmpNo = String(parseInt(newEmpNo, 10) + counter).padStart(
-            length,
-            '0',
-          );
-        } else {
-          const match = newEmpNo.match(/(\d+)/);
-          if (match) {
-            const length = match[0].length;
-            const newNumeric = String(parseInt(match[0], 10) + counter).padStart(
-              length,
-              '0',
-            );
-            newEmpNo = newEmpNo.replace(/\d+/, newNumeric);
-          }
-        }
-
-        exists = await this.dataSource.query(
-          `SELECT emp_no FROM employee WHERE emp_no = ? LIMIT 1`,
-          [newEmpNo],
-        );
-        counter++;
-      }
+      const sequence = String(nextSeq).padStart(3, '0');
+      const newEmpNo = `${prefix}${sequence}`;
 
       return {
         status: 1,
-        message: 'Employee No generated successfully.',
+        message: 'Employee No generated successfully',
         error: null,
         data: {
-          new_employee_id: newEmpNo,
-          last_employee_id: lastEmployee?.emp_no ?? 'None',
+          employee_no: newEmpNo,
         },
       };
     } catch (error) {
       throw new InternalServerErrorException(
-        'An error occurred while generating the Employee No.',
+        'Error generating employee number',
       );
     }
   }
