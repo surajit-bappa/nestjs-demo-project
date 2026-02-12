@@ -16,11 +16,11 @@ export class Roles {
  @Column({ type: 'tinyint', default: 1 })
   status: number;
 
-  @Column({ type: 'datetime' })
-  created_at: Date;
-
   @Column({ type: 'varchar', length: 20, nullable: true })
   created_by: string;
+
+  @Column({ type: 'datetime' })
+  created_at: Date;
 
   @Column({ nullable: true })
   updated_by: string;

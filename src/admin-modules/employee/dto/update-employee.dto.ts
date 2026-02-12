@@ -26,7 +26,6 @@ export class UpdateEmployeeDto {
   })
   mobile: string;
 
-  // ✅ FIRST NAME
   @Transform(({ value }) =>
     value?.trim().replace(/\s+/g, ' ')
   )
@@ -35,7 +34,6 @@ export class UpdateEmployeeDto {
   })
   fname: string;
 
-  // ✅ MIDDLE NAME
   @Transform(({ value }) =>
     value?.trim().replace(/\s+/g, ' ')
   )
@@ -43,7 +41,7 @@ export class UpdateEmployeeDto {
   @IsString()
   mname?: string;
 
-  // ✅ LAST NAME
+
   @Transform(({ value }) =>
     value?.trim().replace(/\s+/g, ' ')
   )

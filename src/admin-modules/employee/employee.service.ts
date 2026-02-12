@@ -22,6 +22,7 @@ export class EmployeeService {
         'e.emp_no AS emp_no',
       ])
       .where('e.is_deleted = :is_deleted', { is_deleted: 'N' })
+      .andWhere('e.status = :status', { status: 1 })
       .orderBy('name', 'ASC')
       .getRawMany();
   }
@@ -161,16 +162,32 @@ export class EmployeeService {
       throw new BadRequestException('Date of birth cannot be a future date');
     }
 
-    // Duplicate emp_no check
+    // Duplicate checks (emp_no OR email OR mobile)
     const existing = await this.employeeRepo.findOne({
-      where: { emp_no: dto.emp_no },
+      where: [
+        { emp_no: dto.emp_no },
+        { email: dto.email },
+        { mobile: dto.mobile },
+      ],
     });
 
     if (existing) {
+    if (existing.emp_no === dto.emp_no) {
       throw new BadRequestException(
         `Employee number (${dto.emp_no}) already exists`,
       );
     }
+    if (existing.email === dto.email) {
+      throw new BadRequestException(
+        `Email (${dto.email}) already exists`,
+      );
+    }
+    if (existing.mobile === dto.mobile) {
+      throw new BadRequestException(
+        `Mobile number (${dto.mobile}) already exists`,
+      );
+    }
+  }
 
     // Transaction
     const queryRunner = this.dataSource.createQueryRunner();
@@ -247,21 +264,34 @@ export class EmployeeService {
       throw new NotFoundException('Employee not found');
     }
 
-    // Duplicate emp_no check
+  // Duplicate check for emp_no OR email OR mobile 
     const duplicate = await this.employeeRepo.findOne({
-      where: {
-        emp_no,
-        id: Not(+employee_id),
-      },
+      where: [
+        { emp_no, id: Not(+employee_id) },
+        { email, id: Not(+employee_id) },
+        { mobile, id: Not(+employee_id) },
+      ],
     });
 
     if (duplicate) {
-      throw new BadRequestException(
-        `Employee number (${emp_no}) already exists`,
-      );
+      if (duplicate.emp_no === emp_no) {
+        throw new BadRequestException(
+          `Employee number (${emp_no}) already exists`,
+        );
+      }
+      if (duplicate.email === email) {
+        throw new BadRequestException(
+          `Email (${email}) already exists`,
+        );
+      }
+      if (duplicate.mobile === mobile) {
+        throw new BadRequestException(
+          `Mobile number (${mobile}) already exists`,
+        );
+      }
     }
 
-    // Transaction (same as CI)
+    // Transaction
     return this.dataSource.transaction(async (manager) => {
       await manager.update(
         Employee,

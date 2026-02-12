@@ -16,11 +16,11 @@ export class UpdateRoleDto {
   @Matches(/^[A-Z]+$/, {
     message: 'Code must be in uppercase letters only',
   })
-  code: string;
+  rolecode: string;
 
   @IsString()
   @MaxLength(50)
-  value: string;
+  rolename: string;
 
   @IsString()
   @MaxLength(20)

@@ -18,9 +18,9 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get('list')
-  async getRoleList(@Query('user_role') userRole: string) {
+  async getRoleList(@Query('user_role') userRole: string, @Query('status') status?: string) {
     try {
-      const data = await this.rolesService.getRoleList(userRole);
+      const data = await this.rolesService.getRoleList(userRole,status !== undefined ? Number(status) : undefined);
 
       if (data.length) {
         return {
@@ -51,4 +51,18 @@ export class RolesController {
     async addRole(@Body() dto: CreateRoleDto) {
       return this.rolesService.add(dto);
     }
+
+    @Post('update')
+    @UseInterceptors(AnyFilesInterceptor())  
+    async updateRole(@Body() dto: UpdateRoleDto) {
+      return this.rolesService.update(dto);
+    }
+
+      @Post('delete')
+      @UseInterceptors(AnyFilesInterceptor())  
+      async deleteRole(@Body() body: any) {
+        const { id } = body;
+        return this.rolesService.delete(id);
+      }
+    
 }
