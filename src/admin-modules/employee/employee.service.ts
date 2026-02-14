@@ -29,33 +29,30 @@ export class EmployeeService {
 
   async generateEmployeeNo() {
     try {
-      const now = new Date();
-
-      const year = String(now.getFullYear()).slice(-2);
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-
-      const prefix = `E${year}${month}`;
-
-      // get last employee no
+      // Get last employee number
       const result = await this.dataSource.query(
         `SELECT emp_no FROM employee ORDER BY id DESC LIMIT 1`,
       );
 
-      let nextSeq = 1;
+      let nextNumber = 1;
 
       if (result.length && result[0].emp_no) {
         const lastEmpNo = result[0].emp_no;
 
-        const lastNumber = parseInt(lastEmpNo.slice(-3), 10);
-        nextSeq = lastNumber + 1;
+        // Extract numeric part from E001
+        const match = lastEmpNo.match(/\d+/);
+
+        if (match) {
+          nextNumber = parseInt(match[0], 10) + 1;
+        }
       }
 
-      const sequence = String(nextSeq).padStart(3, '0');
-      const newEmpNo = `${prefix}${sequence}`;
+      // Format → E001
+      const newEmpNo = `E${String(nextNumber).padStart(3, '0')}`;
 
       return {
         status: 1,
-        message: 'Employee No generated successfully',
+        message: 'Employee No generated successfully.',
         error: null,
         data: {
           employee_no: newEmpNo,

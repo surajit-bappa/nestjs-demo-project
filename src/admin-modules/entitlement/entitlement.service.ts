@@ -224,7 +224,12 @@ export class EntitlementService {
   }
 
   async add(body: any) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
+      /* ---------------- REQUIRED PARAM CHECK ---------------- */
       const requiredParams = [
         'role_data',
         'screen_id',
@@ -234,100 +239,105 @@ export class EntitlementService {
       ];
 
       for (const param of requiredParams) {
-        if (!body[param]) {
-           return {
-                  status: 0,
-                  message: 'Failed to add role data',
-                  error: `${param} is required`,
-                  data: null,
-                };
-         }
-          
+        if (!body?.[param]) {
+          return {
+            status: 0,
+            message: 'Failed to add entitlement',
+            error: `${param} is required`,
+            data: null,
+          };
+        }
       }
 
-      const roles = JSON.parse(body.role_data); // [{ value: 'SA' }]
-      const screenIds = JSON.parse(body.screen_id); // [1,2,3]
+      /* ---------------- PARSE JSON ---------------- */
+      let roles: any[];
+      let screenIds: any[];
+
+      try {
+        roles = JSON.parse(body.role_data);
+        screenIds = JSON.parse(body.screen_id);
+      } catch {
+        return {
+          status: 0,
+          message: 'Invalid JSON format',
+          error: 'role_data or screen_id must be JSON',
+          data: null,
+        };
+      }
 
       const isView = body.is_view;
       const isEdit = body.is_edit;
-      const created_by = body.created_by;
+      const createdBy = body.created_by;
       const createdAt = new Date();
 
       const responseData: any[] = [];
       let overallStatus = true;
 
+      /* ---------------- DELETE OLD DATA ---------------- */
+      for (const screenId of screenIds) {
+        await queryRunner.query(
+          `DELETE FROM config_role_mapping WHERE screen_id_fk = ?`,
+          [screenId],
+        );
+      }
+
+      /* ---------------- INSERT NEW DATA ---------------- */
       for (const role of roles) {
+        const roleValue = role?.value?.trim();
+        if (!roleValue) continue;
+
         for (const screenId of screenIds) {
-          // 🔎 Check existing role
-          const existing = await this.dataSource.query(
-            `
-            SELECT id FROM config_role_mapping
-            WHERE role = ? AND screen_id_fk = ?
-            LIMIT 1
-            `,
-            [role.value.trim(), screenId],
-          );
 
-          if (existing.length > 0) {
-            responseData.push({
-              role: role.value,
-              screen_id: screenId,
-              status: 0,
-              message: 'Role already exists.',
-            });
-            overallStatus = false;
-            continue;
-          }
-
-          // ➕ Insert new mapping
-          const insertResult = await this.dataSource.query(
-            `
-            INSERT INTO config_role_mapping
+          const result = await queryRunner.query(
+            `INSERT INTO config_role_mapping
             (role, screen_id_fk, is_view, is_edit, created_by, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            `,
-            [
-              role.value.trim(),
-              screenId,
-              isView,
-              isEdit,
-              created_by,
-              createdAt,
-            ],
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [roleValue, screenId, isView, isEdit, createdBy, createdAt],
           );
 
-          if (insertResult.affectedRows > 0) {
+          if (result?.affectedRows > 0 || result?.insertId) {
             responseData.push({
-              role: role.value,
+              role: roleValue,
               screen_id: screenId,
               status: 1,
-              message: 'Success',
+              message: 'Entitlement added successfully',
             });
           } else {
+            overallStatus = false;
+
             responseData.push({
-              role: role.value,
+              role: roleValue,
               screen_id: screenId,
               status: 0,
-              message: 'Failed to add role data',
+              message: 'Failed to insert entitlement',
             });
-            overallStatus = false;
           }
         }
       }
 
+      await queryRunner.commitTransaction();
+
+      /* ---------------- RETURN RESPONSE ---------------- */
       return {
-        status: 1,
+        status: overallStatus ? 1 : 0,
         message: overallStatus
           ? 'Entitlement successfully added'
           : 'Some roles failed to add',
         error: overallStatus ? null : 'Some roles failed to add',
         data: responseData,
       };
+
     } catch (error) {
-      console.error('Add Entitlement Error:', error);
-      throw new InternalServerErrorException(error.message);
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException(
+        error.message || 'Internal Server Error',
+      );
+
+    } finally {
+      await queryRunner.release();
     }
   }
+
 
     async update(body: any) {
     try {
@@ -343,7 +353,7 @@ export class EntitlementService {
         if (!body[param]) {
            return {
                   status: 0,
-                  message: 'Failed to update role data',
+                  message: 'Failed to update entitlement',
                   error: `${param} is required`,
                   data: null,
                 };
@@ -364,7 +374,7 @@ export class EntitlementService {
       } catch {
         return {
           status: 0,
-          message: 'Failed to update role data',
+          message: 'Failed to update entitlements',
           error:
             'Invalid role_data format. Expected object with value property or array of objects.',
           data: null,
@@ -383,7 +393,7 @@ export class EntitlementService {
       } else {
         return {
           status: 0,
-          message: 'Failed to update role data',
+          message: 'Failed to update entitlements',
           error:
             'Invalid role_data format. Expected object with value property or array of objects.',
           data: null,
@@ -442,13 +452,13 @@ export class EntitlementService {
             responseData.push({
               role: roleValue,
               status: 1,
-              message: 'Role updated successfully',
+              message: 'Entitlement updated successfully',
             });
           } else {
             responseData.push({
               role: roleValue,
               status: 0,
-              message: 'No changes made to role data',
+              message: 'No changes made to entitlement',
             });
             overallStatus = 0;
           }
@@ -475,13 +485,13 @@ export class EntitlementService {
             responseData.push({
               role: roleValue,
               status: 1,
-              message: 'Role inserted successfully',
+              message: 'Entitlement inserted successfully',
             });
           } else {
             responseData.push({
               role: roleValue,
               status: 0,
-              message: 'Failed to insert role data',
+              message: 'Failed to insert entitlement',
             });
             overallStatus = 0;
           }
@@ -498,7 +508,6 @@ export class EntitlementService {
         data: responseData,
       };
     } catch (error) {
-      console.error('Entitlement.update Error:', error);
       throw new InternalServerErrorException(
         'An error occurred while updating entitlement.',
       );
@@ -527,7 +536,7 @@ export class EntitlementService {
         return {
           status: 0,
           message: 'Entitlement not found',
-          error: 'No record found with the provided id and organization_id.',
+          error: 'No record found',
           data: null,
         };
       }
